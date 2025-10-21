@@ -89,6 +89,23 @@ dependencies {
   implementation("androidx.media3:media3-ui:1.4.1")
   implementation("androidx.media3:media3-effect:1.4.1")
 
+  // YBVR Player
+  // implementation(project(":sdksupport"))
+  // implementation(files("libs/sdksupport-release.aar"))
+  implementation(files("libs/sdksupport-debug.aar"))
+
+  implementation(files("libs/ybvr-exoplayer.aar"))
+  implementation(files("libs/ybvr-exoplayer-core.aar"))
+  implementation(files("libs/ybvr-exoplayer-ui.aar"))
+  implementation(files("libs/ybvr-exoplayer-common.aar"))
+  implementation(files("libs/ybvr-exoplayer-dash.aar"))
+  implementation(files("libs/ybvr-exoplayer-hls.aar"))
+  implementation(files("libs/ybvr-exoplayer-smoothstreaming.aar"))
+  implementation(files("libs/ybvr-exoplayer-extractor.aar"))
+  implementation(files("libs/ybvr-exoplayer-extension-cronet.aar"))
+  implementation(files("libs/ybvr-exoplayer-extension-rtmp.aar"))
+  implementation(files("libs/ybvr-exoplayer-ybvr-libraries.aar"))
+
   // Tween Engine
   implementation("com.dorkbox:TweenEngine:9.2")
 
