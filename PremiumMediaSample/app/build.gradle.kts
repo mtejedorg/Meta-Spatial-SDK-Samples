@@ -83,16 +83,10 @@ dependencies {
   implementation("androidx.compose.material3:material3")
   implementation("androidx.compose.material:material")
 
-  // Exoplayer
-  implementation("androidx.media3:media3-exoplayer:1.4.1")
-  implementation("androidx.media3:media3-exoplayer-dash:1.4.1")
-  implementation("androidx.media3:media3-ui:1.4.1")
-  implementation("androidx.media3:media3-effect:1.4.1")
-
   // YBVR Player
   // implementation(project(":sdksupport"))
   // implementation(files("libs/sdksupport-release.aar"))
-  implementation(files("libs/sdksupport-debug.aar"))
+  //implementation(files("libs/sdksupport-debug.aar"))
 
   implementation(files("libs/ybvr-exoplayer.aar"))
   implementation(files("libs/ybvr-exoplayer-core.aar"))

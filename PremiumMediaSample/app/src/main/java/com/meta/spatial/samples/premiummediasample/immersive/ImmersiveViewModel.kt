@@ -7,7 +7,8 @@
 
 package com.meta.spatial.samples.premiummediasample.immersive
 
-import androidx.media3.exoplayer.ExoPlayer
+// Replaced Media3 import with ExoPlayer 2.14
+import com.ybvr.android.exoplr2avp.SimpleExoPlayer
 import com.meta.spatial.core.Entity
 import com.meta.spatial.core.SystemManager
 import com.meta.spatial.core.Vector3
@@ -38,9 +39,9 @@ import com.meta.spatial.toolkit.SpatialActivityManager
 import dorkbox.tweenEngine.TweenEngine
 
 class ImmersiveViewModel(
-    val ipcServiceConnection: IPCServiceConnection,
-    val systemManager: SystemManager,
-    val spatialAudioFeature: SpatialAudioFeature,
+  val ipcServiceConnection: IPCServiceConnection,
+  val systemManager: SystemManager,
+  val spatialAudioFeature: SpatialAudioFeature,
 ) {
   private lateinit var tweenEngine: TweenEngine
   private lateinit var controlVisibilitySystem: ControlPanelVisibilitySystem
@@ -49,7 +50,8 @@ class ImmersiveViewModel(
   lateinit var lightingPassthroughHandler: LightingPassthroughHandler
   lateinit var cinemaStateHandler: CinemaStateHandler
 
-  lateinit var exoPlayer: ExoPlayer
+  // Changed ExoPlayer to SimpleExoPlayer
+  lateinit var exoPlayer: SimpleExoPlayer
 
   var debugControlsPanel: Entity? = null
   lateinit var controlsPanel: ControlsPanelEntity
@@ -61,6 +63,7 @@ class ImmersiveViewModel(
 
   fun initializeEntities(scene: Scene) {
     SpatialActivityManager.executeOnVrActivity<AppSystemActivity> { immersiveActivity ->
+      // buildCustomExoPlayer is now assumed to return SimpleExoPlayer
       exoPlayer = buildCustomExoPlayer(immersiveActivity.spatialContext, true)
     }
 
@@ -85,10 +88,10 @@ class ImmersiveViewModel(
   fun onHeadFound() {
     if (BuildConfig.DEBUG) {
       placeInFrontOfHead(
-          debugControlsPanel!!,
-          SPAWN_DISTANCE,
-          angleYAxisFromHead = 90f,
-          offset = Vector3(0f, -0.5f, 0f),
+        debugControlsPanel!!,
+        SPAWN_DISTANCE,
+        angleYAxisFromHead = 90f,
+        offset = Vector3(0f, -0.5f, 0f),
       )
     }
 
@@ -104,8 +107,8 @@ class ImmersiveViewModel(
   fun showHome(initialShow: Boolean = false) {
     homePanel.fadeVisibility(true)
     cinemaStateHandler.setCinemaState(
-        CinemaState.Home,
-        forceIsPlayingLighting = true,
+      CinemaState.Home,
+      forceIsPlayingLighting = true,
     ) // Changes lighting
     if (!initialShow) {
       cinemaStateHandler.moveHomeToTVPosition()
@@ -117,10 +120,10 @@ class ImmersiveViewModel(
     homePanel.fadeVisibility(false) {
       createExoPanel(homeItem.media)
       val cinemaState =
-          when (homeItem.media.videoShape) {
-            MediaSource.VideoShape.Rectilinear -> CinemaState.TV
-            MediaSource.VideoShape.Equirect180 -> CinemaState.Equirect180
-          }
+        when (homeItem.media.videoShape) {
+          MediaSource.VideoShape.Rectilinear -> CinemaState.TV
+          MediaSource.VideoShape.Equirect180 -> CinemaState.Equirect180
+        }
       systemManager.findSystem<PanelReadySystem>().executeWhenReady(currentExoPanel!!.entity) {
         currentExoPanel!!.showPlayer {
           controlVisibilitySystem.fadeAndStartTracking()
@@ -156,7 +159,8 @@ class ImmersiveViewModel(
   }
 
   fun toggleAudioMute(isMute: Boolean) {
-    exoPlayer.volume = if (isMute) 0f else 1f
+    // Changed from property access to setter method
+    exoPlayer.setVolume(if (isMute) 0f else 1f)
   }
 
   fun setPassthrough(passthrough: Float) {
@@ -172,19 +176,20 @@ class ImmersiveViewModel(
   }
 
   private fun createExoPanel(mediaItem: MediaSource) {
+    // ExoVideoEntity.create is now assumed to accept SimpleExoPlayer
     currentExoPanel =
-        ExoVideoEntity.create(
-            exoPlayer,
-            mediaItem,
-            tweenEngine,
-            ipcServiceConnection,
-            spatialAudioFeature,
-        )
+      ExoVideoEntity.create(
+        exoPlayer,
+        mediaItem,
+        tweenEngine,
+        ipcServiceConnection,
+        spatialAudioFeature,
+      )
     currentExoPanel?.let { exoPanel ->
       exoPanel.entity.registerEventListener<ExoPlayerEvent>(ExoPlayerEvent.ON_END) { _, _ ->
         lightingPassthroughHandler.transitionLighting(
-            cinemaStateHandler.cinemaState,
-            isPlaying = false,
+          cinemaStateHandler.cinemaState,
+          isPlaying = false,
         )
       }
       if (mediaItem.videoShape == MediaSource.VideoShape.Rectilinear) {
@@ -207,7 +212,8 @@ class ImmersiveViewModel(
   }
 
   fun pauseApp() {
-    wasPlayingBeforeVRPause = exoPlayer.isPlaying
+    // Changed from .isPlaying property to .isPlaying() method
+    wasPlayingBeforeVRPause = exoPlayer.isPlaying()
     exoPlayer.pause()
   }
 

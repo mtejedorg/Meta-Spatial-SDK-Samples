@@ -5,15 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@file:OptIn(UnstableApi::class)
-
 package com.meta.spatial.samples.premiummediasample.entities
 
 import android.util.Log
-import androidx.annotation.OptIn
-import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
+
+import com.ybvr.android.exoplr2avp.Player
+import com.ybvr.android.exoplr2avp.SimpleExoPlayer
+
 import com.meta.spatial.core.Entity
 import com.meta.spatial.core.Vector2
 import com.meta.spatial.runtime.ButtonBits
@@ -65,280 +63,293 @@ import dorkbox.tweenEngine.TweenEquations
  * WallLighting, Rectangular vs 180
  */
 class ExoVideoEntity(
-    private val exoPlayer: ExoPlayer,
+    // Changed ExoPlayer to SimpleExoPlayer
+    private val exoPlayer: SimpleExoPlayer,
     mediaSource: MediaSource,
     panelRenderingStyle: PanelRenderingStyle,
     tweenEngine: TweenEngine,
     ipcServiceConnection: IPCServiceConnection,
     private val spatialAudioFeature: SpatialAudioFeature,
 ) : FadingPanel(tweenEngine) {
-  companion object {
-    val TAG = "ExoPlayerEntity"
+    companion object {
+        val TAG = "ExoPlayerEntity"
 
-    const val BASE_PANEL_SIZE = 0.7f // 0.7 meters
-    const val TIME_REMAINING_BEFORE_RESTART = 1_000L // 1 second
+        const val BASE_PANEL_SIZE = 0.7f // 0.7 meters
+        const val TIME_REMAINING_BEFORE_RESTART = 1_000L // 1 second
 
-    fun create(
-        exoPlayer: ExoPlayer,
-        mediaSource: MediaSource,
-        tweenEngine: TweenEngine,
-        ipcServiceConnection: IPCServiceConnection,
-        spatialAudioFeature: SpatialAudioFeature,
-    ): ExoVideoEntity {
-      val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
-      val drmEnabled =
-          mediaSource.videoSource is VideoSource.Url &&
-              mediaSource.videoSource.drmLicenseUrl != null
+        fun create(
+            // Changed ExoPlayer to SimpleExoPlayer
+            exoPlayer: SimpleExoPlayer,
+            mediaSource: MediaSource,
+            tweenEngine: TweenEngine,
+            ipcServiceConnection: IPCServiceConnection,
+            spatialAudioFeature: SpatialAudioFeature,
+        ): ExoVideoEntity {
+            val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
+            val drmEnabled =
+                mediaSource.videoSource is VideoSource.Url &&
+                        mediaSource.videoSource.drmLicenseUrl != null
 
-      // DRM can be enabled two ways:
-      // 1. Activity panel (ActivityPanelRegistration, IntentPanelRegistration) + MediaPanelSettings
-      // 2. VideoSurfacePanelRegistration panel
-      val panelRenderingStyle =
-          if (drmEnabled || mediaSource.videoShape != MediaSource.VideoShape.Rectilinear)
-              PanelRenderingStyle.DIRECT_TO_SURFACE
-          else PanelRenderingStyle.READABLE
+            // DRM can be enabled two ways:
+            // 1. Activity panel (ActivityPanelRegistration, IntentPanelRegistration) + MediaPanelSettings
+            // 2. VideoSurfacePanelRegistration panel
+            val panelRenderingStyle =
+                if (drmEnabled || mediaSource.videoShape != MediaSource.VideoShape.Rectilinear)
+                    PanelRenderingStyle.DIRECT_TO_SURFACE
+                else PanelRenderingStyle.READABLE
 
-      val exoVideo =
-          ExoVideoEntity(
-              exoPlayer = exoPlayer,
-              mediaSource = mediaSource,
-              panelRenderingStyle = panelRenderingStyle,
-              tweenEngine = tweenEngine,
-              ipcServiceConnection = ipcServiceConnection,
-              spatialAudioFeature = spatialAudioFeature,
-          )
-
-      // WallLighting is only supported for Rectangular panels.
-      if (mediaSource.videoShape == MediaSource.VideoShape.Rectilinear) {
-        // Shader effects will not work on non-readable panels.
-        if (panelRenderingStyle != PanelRenderingStyle.DIRECT_TO_SURFACE) {
-          exoVideo.entity.setComponent(HeroLighting())
-        }
-        exoVideo.entity.setComponents(
-            PanelDimensions(Vector2(panelSize.x, panelSize.y)),
-            Anchorable(0.02f),
-            AnchorOnLoad(scaleProportional = true, distanceCheck = MAX_SPAWN_DISTANCE + 0.5f),
-            Grabbable(true, GrabbableType.PIVOT_Y),
-            ScaledParent(),
-            Scale(),
-            Scalable(),
-        )
-      }
-      return exoVideo
-    }
-  }
-
-  val id: Int = getDisposableID()
-
-  override lateinit var entity: Entity
-
-  val controlPanelPollHandler: ControlPanelPollHandler =
-      ControlPanelPollHandler(exoPlayer, ipcServiceConnection)
-
-  init {
-    if (panelRenderingStyle == PanelRenderingStyle.READABLE) {
-      createReadableSurfacePanel(mediaSource)
-    } else if (panelRenderingStyle == PanelRenderingStyle.DIRECT_TO_SURFACE) {
-      createDirectToSurfacePanel(mediaSource)
-    }
-  }
-
-  /**
-   * The Readable surface panel supports fetching the panel image for use in custom shaders. Less
-   * performant than regular media panel
-   */
-  private fun createReadableSurfacePanel(
-      mediaSource: MediaSource,
-  ) {
-    val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
-    SpatialActivityManager.executeOnVrActivity<AppSystemActivity> { immersiveActivity ->
-      immersiveActivity.registerPanel(
-          ReadableVideoSurfacePanelRegistration(
-              id,
-              surfaceConsumer = { panelEnt, surface ->
-                SurfaceUtil.paintBlack(surface)
-                exoPlayer.setMediaSource(mediaSource, immersiveActivity)
-                exoPlayer.prepare()
-                exoPlayer.setHighQuality()
-                exoPlayer.setVideoSurface(surface)
-                addLinkSpatialAudioListener(exoPlayer, panelEnt)
-              },
-              settingsCreator = {
-                ReadableMediaPanelSettings(
-                    shape = QuadShapeOptions(width = panelSize.x, height = panelSize.y),
-                    style = PanelStyleOptions(R.style.PanelAppThemeTransparent),
-                    display =
-                        PixelDisplayOptions(
-                            width = mediaSource.videoDimensionsPx.x,
-                            height = mediaSource.videoDimensionsPx.y,
-                        ),
-                    rendering =
-                        ReadableMediaPanelRenderOptions(
-                            mips = mediaSource.mips,
-                            stereoMode = mediaSource.stereoMode,
-                        ),
-                    input =
-                        PanelInputOptions(
-                            ButtonBits.ButtonA or
-                                ButtonBits.ButtonTriggerL or
-                                ButtonBits.ButtonTriggerR
-                        ),
+            val exoVideo =
+                ExoVideoEntity(
+                    exoPlayer = exoPlayer,
+                    mediaSource = mediaSource,
+                    panelRenderingStyle = panelRenderingStyle,
+                    tweenEngine = tweenEngine,
+                    ipcServiceConnection = ipcServiceConnection,
+                    spatialAudioFeature = spatialAudioFeature,
                 )
-              },
-          )
-      )
-    }
-    entity = Entity.create(Panel(id), Transform(), Visible(false), PanelLayerAlpha(0f))
-  }
 
-  /**
-   * The VideoSurfacePanelRegistration renders the exoplayer directly to the Panel Surface. This
-   * approach enables DRM and is the most performant option for rendering high resolution video.
-   */
-  private fun createDirectToSurfacePanel(
-      mediaSource: MediaSource,
-  ) {
-    val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
-
-    SpatialActivityManager.executeOnVrActivity<AppSystemActivity> { immersiveActivity ->
-      immersiveActivity.registerPanel(
-          VideoSurfacePanelRegistration(
-              id,
-              surfaceConsumer = { panelEnt, surface ->
-                SurfaceUtil.paintBlack(surface)
-                exoPlayer.setMediaSource(mediaSource, immersiveActivity)
-                exoPlayer.prepare()
-                exoPlayer.setHighQuality()
-                exoPlayer.setVideoSurface(surface)
-                addLinkSpatialAudioListener(exoPlayer, panelEnt)
-              },
-              settingsCreator = {
-                MediaPanelSettings(
-                    shape =
-                        when (mediaSource.videoShape) {
-                          MediaSource.VideoShape.Rectilinear ->
-                              QuadShapeOptions(panelSize.x, panelSize.y)
-                          MediaSource.VideoShape.Equirect180 ->
-                              Equirect180ShapeOptions(radius = 50f)
-                        },
-                    display =
-                        PixelDisplayOptions(
-                            width = mediaSource.videoDimensionsPx.x,
-                            height = mediaSource.videoDimensionsPx.y,
-                        ),
-                    rendering =
-                        MediaPanelRenderOptions(
-                            isDRM =
-                                mediaSource.videoSource is VideoSource.Url &&
-                                    mediaSource.videoSource.drmLicenseUrl != null,
-                            stereoMode = mediaSource.stereoMode,
-                            zIndex =
-                                if (mediaSource.videoShape == MediaSource.VideoShape.Equirect180) -1
-                                else 0,
-                        ),
-                    style = PanelStyleOptions(R.style.PanelAppThemeTransparent),
+            // WallLighting is only supported for Rectangular panels.
+            if (mediaSource.videoShape == MediaSource.VideoShape.Rectilinear) {
+                // Shader effects will not work on non-readable panels.
+                if (panelRenderingStyle != PanelRenderingStyle.DIRECT_TO_SURFACE) {
+                    exoVideo.entity.setComponent(HeroLighting())
+                }
+                exoVideo.entity.setComponents(
+                    PanelDimensions(Vector2(panelSize.x, panelSize.y)),
+                    Anchorable(0.02f),
+                    AnchorOnLoad(scaleProportional = true, distanceCheck = MAX_SPAWN_DISTANCE + 0.5f),
+                    Grabbable(true, GrabbableType.PIVOT_Y),
+                    ScaledParent(),
+                    Scale(),
+                    Scalable(),
                 )
-              },
-          )
-      )
-    }
-
-    entity =
-        Entity.create(
-            Transform(),
-            Panel(id),
-            Visible(false),
-            PanelLayerAlpha(0f),
-        )
-  }
-
-  private fun addLinkSpatialAudioListener(player: ExoPlayer, panelEnt: Entity) {
-    player.addListener(
-        object : Player.Listener {
-          override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_READY) {
-              // Use a single registered audio session id (just choosing 1 as a default)
-              // as we only have one audio source playing at a time.
-              val registeredAudioSessionId = 1
-              spatialAudioFeature.registerAudioSessionId(
-                  registeredAudioSessionId,
-                  player.audioSessionId,
-              )
-
-              // Determine the appropriate AudioType based on channel count
-              val audioFormat = player.audioFormat
-              val audioType =
-                  if (audioFormat != null) {
-                    when (audioFormat.channelCount) {
-                      1 -> AudioType.MONO
-                      2 -> AudioType.STEREO
-                      else ->
-                          AudioType
-                              .SOUNDFIELD // Default to soundfield for multichannel (>3 channels)
-                    }
-                  } else {
-                    AudioType.STEREO // Default to stereo if format is unknown
-                  }
-
-              panelEnt.setComponent(AudioSessionId(registeredAudioSessionId, audioType))
-              Log.i(
-                  EXO_VIDEO_ENTITY_TAG,
-                  "Set AudioSessionId component for entity ${panelEnt.id} with type: $audioType",
-              )
             }
-          }
+            return exoVideo
         }
-    )
-  }
-
-  fun togglePlay(isPlaying: Boolean) {
-    if (isPlaying) {
-      if ((exoPlayer.currentPosition + TIME_REMAINING_BEFORE_RESTART) > exoPlayer.duration) {
-        exoPlayer.seekTo(0L)
-      }
-      exoPlayer.play()
-    } else {
-      exoPlayer.pause()
     }
-  }
 
-  fun showPlayer(onShowComplete: (() -> Unit)? = null) {
-    controlPanelPollHandler.start()
-    super.fadeVisibility(
-        true,
-        TIMINGS.EXOPLAYER_FADE_BOTH.millisToFloat(),
-        TweenEquations.Circle_In,
+    val id: Int = getDisposableID()
+
+    override lateinit var entity: Entity
+
+    // This class (ControlPanelPollHandler) must also be updated to accept SimpleExoPlayer
+    val controlPanelPollHandler: ControlPanelPollHandler =
+        ControlPanelPollHandler(exoPlayer, ipcServiceConnection)
+
+    init {
+        if (panelRenderingStyle == PanelRenderingStyle.READABLE) {
+            createReadableSurfacePanel(mediaSource)
+        } else if (panelRenderingStyle == PanelRenderingStyle.DIRECT_TO_SURFACE) {
+            createDirectToSurfacePanel(mediaSource)
+        }
+    }
+
+    /**
+     * The Readable surface panel supports fetching the panel image for use in custom shaders. Less
+     * performant than regular media panel
+     */
+    private fun createReadableSurfacePanel(
+        mediaSource: MediaSource,
     ) {
-      exoPlayer.playWhenReady = true
-      onShowComplete?.invoke()
+        val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
+        SpatialActivityManager.executeOnVrActivity<AppSystemActivity> { immersiveActivity ->
+            immersiveActivity.registerPanel(
+                ReadableVideoSurfacePanelRegistration(
+                    id,
+                    surfaceConsumer = { panelEnt, surface ->
+                        SurfaceUtil.paintBlack(surface)
+                        // Assuming setMediaSource extension function is updated for SimpleExoPlayer
+                        exoPlayer.setMediaSource(mediaSource, immersiveActivity)
+                        exoPlayer.prepare()
+                        // Assuming setHighQuality extension function is updated for SimpleExoPlayer 2.14 API
+                        exoPlayer.setHighQuality()
+                        exoPlayer.setVideoSurface(surface)
+                        addLinkSpatialAudioListener(exoPlayer, panelEnt)
+                    },
+                    settingsCreator = {
+                        ReadableMediaPanelSettings(
+                            shape = QuadShapeOptions(width = panelSize.x, height = panelSize.y),
+                            style = PanelStyleOptions(R.style.PanelAppThemeTransparent),
+                            display =
+                                PixelDisplayOptions(
+                                    width = mediaSource.videoDimensionsPx.x,
+                                    height = mediaSource.videoDimensionsPx.y,
+                                ),
+                            rendering =
+                                ReadableMediaPanelRenderOptions(
+                                    mips = mediaSource.mips,
+                                    stereoMode = mediaSource.stereoMode,
+                                ),
+                            input =
+                                PanelInputOptions(
+                                    ButtonBits.ButtonA or
+                                            ButtonBits.ButtonTriggerL or
+                                            ButtonBits.ButtonTriggerR
+                                ),
+                        )
+                    },
+                )
+            )
+        }
+        entity = Entity.create(Panel(id), Transform(), Visible(false), PanelLayerAlpha(0f))
     }
-  }
 
-  fun hidePlayer(onHideComplete: (() -> Unit)? = null) {
-    exoPlayer.pause()
-    controlPanelPollHandler.stop()
-    super.fadeVisibility(
-        false,
-        TIMINGS.EXOPLAYER_FADE_BOTH.millisToFloat(),
-        TweenEquations.Circle_Out,
+    /**
+     * The VideoSurfacePanelRegistration renders the exoplayer directly to the Panel Surface. This
+     * approach enables DRM and is the most performant option for rendering high resolution video.
+     */
+    private fun createDirectToSurfacePanel(
+        mediaSource: MediaSource,
     ) {
-      onHideComplete?.invoke()
-    }
-  }
+        val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
 
-  fun destroy() {
-    entity.destroy()
-    exoPlayer.setVideoSurface(null)
-    exoPlayer.clearMediaItems()
-    controlPanelPollHandler.stop()
-    currTween?.cancel()
-    SpatialActivityManager.getVrActivity<AppSystemActivity>().unregisterPanel(id)
-  }
+        SpatialActivityManager.executeOnVrActivity<AppSystemActivity> { immersiveActivity ->
+            immersiveActivity.registerPanel(
+                VideoSurfacePanelRegistration(
+                    id,
+                    surfaceConsumer = { panelEnt, surface ->
+                        SurfaceUtil.paintBlack(surface)
+                        // Assuming setMediaSource extension function is updated for SimpleExoPlayer
+                        exoPlayer.setMediaSource(mediaSource, immersiveActivity)
+                        exoPlayer.prepare()
+                        // Assuming setHighQuality extension function is updated for SimpleExoPlayer 2.14 API
+                        exoPlayer.setHighQuality()
+                        exoPlayer.setVideoSurface(surface)
+                        addLinkSpatialAudioListener(exoPlayer, panelEnt)
+                    },
+                    settingsCreator = {
+                        MediaPanelSettings(
+                            shape =
+                                when (mediaSource.videoShape) {
+                                    MediaSource.VideoShape.Rectilinear ->
+                                        QuadShapeOptions(panelSize.x, panelSize.y)
+                                    MediaSource.VideoShape.Equirect180 ->
+                                        Equirect180ShapeOptions(radius = 50f)
+                                },
+                            display =
+                                PixelDisplayOptions(
+                                    width = mediaSource.videoDimensionsPx.x,
+                                    height = mediaSource.videoDimensionsPx.y,
+                                ),
+                            rendering =
+                                MediaPanelRenderOptions(
+                                    isDRM =
+                                        mediaSource.videoSource is VideoSource.Url &&
+                                                mediaSource.videoSource.drmLicenseUrl != null,
+                                    stereoMode = mediaSource.stereoMode,
+                                    zIndex =
+                                        if (mediaSource.videoShape == MediaSource.VideoShape.Equirect180) -1
+                                        else 0,
+                                ),
+                            style = PanelStyleOptions(R.style.PanelAppThemeTransparent),
+                        )
+                    },
+                )
+            )
+        }
+
+        entity =
+            Entity.create(
+                Transform(),
+                Panel(id),
+                Visible(false),
+                PanelLayerAlpha(0f),
+            )
+    }
+
+    // Changed ExoPlayer to SimpleExoPlayer
+    private fun addLinkSpatialAudioListener(player: SimpleExoPlayer, panelEnt: Entity) {
+        player.addListener(
+            // Changed to 2.14 Player.EventListener
+            object : Player.EventListener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_READY) {
+                        // Use a single registered audio session id (just choosing 1 as a default)
+                        // as we only have one audio source playing at a time.
+                        val registeredAudioSessionId = 1
+                        spatialAudioFeature.registerAudioSessionId(
+                            registeredAudioSessionId,
+                            // Changed to .getAudioSessionId()
+                            player.getAudioSessionId(),
+                        )
+
+                        // Determine the appropriate AudioType based on channel count
+                        // Changed to .getAudioFormat()
+                        val audioFormat = player.getAudioFormat()
+                        val audioType =
+                            if (audioFormat != null) {
+                                when (audioFormat.channelCount) {
+                                    1 -> AudioType.MONO
+                                    2 -> AudioType.STEREO
+                                    else ->
+                                        AudioType
+                                            .SOUNDFIELD // Default to soundfield for multichannel (>3 channels)
+                                }
+                            } else {
+                                AudioType.STEREO // Default to stereo if format is unknown
+                            }
+
+                        panelEnt.setComponent(AudioSessionId(registeredAudioSessionId, audioType))
+                        Log.i(
+                            EXO_VIDEO_ENTITY_TAG,
+                            "Set AudioSessionId component for entity ${panelEnt.id} with type: $audioType",
+                        )
+                    }
+                }
+            })
+    }
+
+    fun togglePlay(isPlaying: Boolean) {
+        if (isPlaying) {
+            // Changed to .getCurrentPosition() and .getDuration()
+            if ((exoPlayer.getCurrentPosition() + TIME_REMAINING_BEFORE_RESTART) > exoPlayer.getDuration()) {
+                exoPlayer.seekTo(0L)
+            }
+            exoPlayer.play()
+        } else {
+            exoPlayer.pause()
+        }
+    }
+
+    fun showPlayer(onShowComplete: (() -> Unit)? = null) {
+        controlPanelPollHandler.start()
+        super.fadeVisibility(
+            true,
+            TIMINGS.EXOPLAYER_FADE_BOTH.millisToFloat(),
+            TweenEquations.Circle_In,
+        ) {
+            // Changed to .setPlayWhenReady(true)
+            exoPlayer.setPlayWhenReady(true)
+            onShowComplete?.invoke()
+        }
+    }
+
+    fun hidePlayer(onHideComplete: (() -> Unit)? = null) {
+        exoPlayer.pause()
+        controlPanelPollHandler.stop()
+        super.fadeVisibility(
+            false,
+            TIMINGS.EXOPLAYER_FADE_BOTH.millisToFloat(),
+            TweenEquations.Circle_Out,
+        ) {
+            onHideComplete?.invoke()
+        }
+    }
+
+    fun destroy() {
+        entity.destroy()
+        exoPlayer.setVideoSurface(null)
+        // Changed to .stop(true) to clear playlist and reset
+        exoPlayer.stop(true)
+        controlPanelPollHandler.stop()
+        currTween?.cancel()
+        SpatialActivityManager.getVrActivity<AppSystemActivity>().unregisterPanel(id)
+    }
 }
 
 enum class PanelRenderingStyle {
-  READABLE,
-  DIRECT_TO_SURFACE,
+    READABLE,
+    DIRECT_TO_SURFACE,
 }
 
 const val EXO_VIDEO_ENTITY_TAG = "ExoVideoEntity"

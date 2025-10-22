@@ -10,11 +10,13 @@ package com.meta.spatial.samples.premiummediasample.immersive
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+
 import com.meta.spatial.samples.premiummediasample.panels.controlsPanel.ControlsPanelActivity.Companion.ControlsPanelCodes
 import com.meta.spatial.samples.premiummediasample.service.IPCService
 import com.meta.spatial.samples.premiummediasample.service.IPCServiceConnection
+
+import com.ybvr.android.exoplr2avp.ExoPlayer
+import com.ybvr.android.exoplr2avp.Player
 
 class ControlPanelPollHandler(
     private val exoPlayer: ExoPlayer,

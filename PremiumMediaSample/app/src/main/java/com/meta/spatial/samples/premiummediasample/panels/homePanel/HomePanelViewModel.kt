@@ -42,6 +42,26 @@ class HomePanelViewModel {
                   ),
           ),
           HomeItem(
+              id = "sk8chicken",
+              thumbId = R.drawable.poster_sk8_chickens,
+              description =
+                  Description(
+                      title = "Sk8 Chickens",
+                      description = "Rectilinear Stereoscopic Video",
+                  ),
+              showInMenu = true,
+              media =
+                  MediaSource(
+                      stereoMode = StereoMode.LeftRight,
+                      videoDimensionsPx = Size(1920 * 2, 1080),
+                      mips = 9,
+                      videoSource =
+                          VideoSource.Url(
+                              "https://dw9dv4drqa1gx.cloudfront.net/DASH_Chickens/SK8_Chickens_3840x1080_Stereo.mpd"
+                          ),
+                  ),
+          ),
+          HomeItem(
               id = "apoIsland180",
               thumbId = R.drawable.poster_apo_island,
               description =
