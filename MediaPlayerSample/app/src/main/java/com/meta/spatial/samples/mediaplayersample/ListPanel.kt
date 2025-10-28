@@ -72,6 +72,7 @@ import kotlinx.coroutines.launch
 data class Movie(
     val id: Int,
     val title: String,
+    val url: String,
     val poster_path: Int,
     val youtubeId: String = "",
     val overview: String = "",
@@ -91,58 +92,81 @@ class MovieViewModel : ViewModel() {
     _movies.value =
         listOf(
             Movie(
+                id = -3,
+                title = "Flying High - CM 32",
+                poster_path = R.drawable.soloist_poster,
+                overview = "Demonstration of stereoscopic video",
+                url = "https://europe-cdn.origin.ybvr.com/streaming/player2_1/flyinghigh/manifest-v2.mpd",
+            ),
+            Movie(
+                id = -2,
+                title = "NBA TV",
+                poster_path = R.drawable.soloist_poster,
+                overview = "Demonstration of stereoscopic video",
+                url = "https://nbatv-cdn.origin.ybvr.com/YBVR/LIVE/live.mpd",
+            ),
+            Movie(
                 id = -1,
                 title = "Soloist 3d",
                 poster_path = R.drawable.soloist_poster,
                 overview = "Demonstration of stereoscopic video",
+                url = "",
             ),
             Movie(
                 id = 0,
                 title = "Meta Quest | Get Into It",
                 poster_path = R.drawable.movie00,
                 youtubeId = "zZIB1xJdamo",
+                url = "",
             ),
             Movie(
                 id = 1,
                 title = "Qu3stions with NBA All-Star Tyrese Haliburton | Meta Quest 3",
                 poster_path = R.drawable.movie01,
                 youtubeId = "0qi6V-yOULg",
+                url = "",
             ),
             Movie(
                 id = 2,
                 title = "This is Meta Quest 3",
                 poster_path = R.drawable.movie02,
                 youtubeId = "JlSMZg5cwKQ",
+                url = "",
             ),
             Movie(
                 id = 3,
                 title = "Meta Quest 3 | Expand Your World | The Instrument",
                 poster_path = R.drawable.movie03,
                 youtubeId = "Exu7r2vZpcw",
+                url = "",
             ),
             Movie(
                 id = 4,
                 title = "Introducing Meta Quest 3 | Coming This Fall",
                 poster_path = R.drawable.movie04,
                 youtubeId = "vMDIpFQYG4A",
+                url = "",
             ),
             Movie(
                 id = 5,
                 title = "Introducing Meta Quest 3",
                 poster_path = R.drawable.movie05,
                 youtubeId = "5AKl_cEB26c",
+                url = "",
             ),
             Movie(
                 id = 6,
                 title = "PianoVision Mixed Reality on Meta Quest 3",
                 poster_path = R.drawable.movie06,
                 youtubeId = "dGPPIF71FBo",
+                url = "",
             ),
             Movie(
                 id = 7,
                 title = "Experience BAM, the ultimate battle game in mixed reality!",
                 poster_path = R.drawable.movie07,
                 youtubeId = "73lKUfuLw4A",
+                url = "",
             ),
             Movie(
                 id = 8,
@@ -150,6 +174,7 @@ class MovieViewModel : ViewModel() {
                     "@VRwithJasmine gets her #MetaQuest3 play area ready to go Question is, what game to play first?",
                 poster_path = R.drawable.movie08,
                 youtubeId = "SBljI8B2zj0",
+                url = "",
             ),
         )
   }
@@ -298,7 +323,13 @@ fun MovieDetailScreen(navController: NavController, viewModel: MovieViewModel) {
       coroutineScope.launch {
         Log.i("movie", "${movie.title}")
 
-        if (movie.id == -1) {
+        if (movie.id < -1) {
+          SpatialActivityManager.executeOnVrActivity<MediaPlayerSampleActivity> { activity ->
+            activity.playVideo(
+                movie.url
+            )
+          }
+        } else if (movie.id == -1) {
           SpatialActivityManager.executeOnVrActivity<MediaPlayerSampleActivity> { activity ->
             activity.playVideo(
                 "android.resource://" + context.getPackageName() + "/" + R.raw.soloist
