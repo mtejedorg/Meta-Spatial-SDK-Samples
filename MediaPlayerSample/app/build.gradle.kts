@@ -32,7 +32,14 @@ android {
     ndkVersion = "27.0.12077973"
   }
 
-  packaging { resources.excludes.add("META-INF/LICENSE") }
+  packaging { 
+    resources.excludes.add("META-INF/LICENSE")
+    resources.excludes.add("LICENSE")
+    resources.excludes.add("LICENSE.CC0")
+    resources.excludes.add("LICENSE.blob")
+    resources.excludes.add("LICENSE.Apachev2")
+    resources.excludes.add("LICENSE.MIT")
+  }
 
   lint { abortOnError = false }
 
@@ -88,9 +95,22 @@ dependencies {
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.androidx.ui.test.manifest)
 
-  // exoplayer
-  implementation("androidx.media3:media3-exoplayer:1.4.1")
-  implementation("androidx.media3:media3-ui:1.4.1")
+  // YBVR Player
+  // implementation(project(":sdksupport"))
+  // implementation(files("libs/sdksupport-release.aar"))
+  //implementation(files("libs/sdksupport-debug.aar"))
+
+  implementation(files("libs/ybvr-exoplayer.aar"))
+  implementation(files("libs/ybvr-exoplayer-core.aar"))
+  implementation(files("libs/ybvr-exoplayer-ui.aar"))
+  implementation(files("libs/ybvr-exoplayer-common.aar"))
+  implementation(files("libs/ybvr-exoplayer-dash.aar"))
+  implementation(files("libs/ybvr-exoplayer-hls.aar"))
+  implementation(files("libs/ybvr-exoplayer-smoothstreaming.aar"))
+  implementation(files("libs/ybvr-exoplayer-extractor.aar"))
+  implementation(files("libs/ybvr-exoplayer-extension-cronet.aar"))
+  implementation(files("libs/ybvr-exoplayer-extension-rtmp.aar"))
+  implementation(files("libs/ybvr-exoplayer-ybvr-libraries.aar"))
 }
 
 val projectDir = layout.projectDirectory

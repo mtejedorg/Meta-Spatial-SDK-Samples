@@ -19,9 +19,6 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.webkit.WebView
 import androidx.compose.ui.platform.ComposeView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import com.meta.spatial.castinputforward.CastInputForwardFeature
 import com.meta.spatial.compose.ComposeFeature
 import com.meta.spatial.compose.ComposeViewPanelRegistration
@@ -81,6 +78,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
+import com.ybvr.android.exoplr2avp.MediaItem
+import com.ybvr.android.exoplr2avp.Player
+import com.ybvr.android.exoplr2avp.SimpleExoPlayer
+
 enum class MovieSceneState {
   VR,
   SURROUND,
@@ -95,7 +96,7 @@ class MediaPlayerSampleActivity : AppSystemActivity() {
   var skyVideoPanel: Entity? = null
 
   val activityScope = CoroutineScope(Dispatchers.Main)
-  var exoPlayer: ExoPlayer? = null
+  var exoPlayer: SimpleExoPlayer? = null
   var webView: WebView? = null
   val LIGHTS_UP_AMBIENT: Float = 5.0f
   lateinit var locomotionSystem: LocomotionSystem
@@ -323,7 +324,7 @@ class MediaPlayerSampleActivity : AppSystemActivity() {
             R.id.video_panel_360,
             surfaceConsumer = { _, surface ->
               exoPlayer =
-                  ExoPlayer.Builder(this).build().apply {
+                  SimpleExoPlayer.Builder(this).build().apply {
                     repeatMode = Player.REPEAT_MODE_ONE
                     setVideoSurface(surface)
                   }
