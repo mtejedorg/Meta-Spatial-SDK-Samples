@@ -18,7 +18,10 @@ import com.meta.spatial.runtime.PanelConfigOptions.Companion.DEFAULT_DPI
 import com.meta.spatial.runtime.SceneMaterial
 import com.meta.spatial.runtime.SceneMesh
 import com.meta.spatial.runtime.SceneTexture
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sin
 
 private const val PIXELS_TO_METERS = 0.0254f / 100f
 private const val defaultTextureDp = 1280
@@ -125,10 +128,14 @@ fun MediaModel.minimizedPanelConfigOptions(): PanelConfigOptions {
             height = min(panelWidth, panelHeight),
             layoutWidthInPx = layoutWidthInPx,
             layoutHeightInPx = layoutHeightInPx,
-            layerConfig = EquirectLayerConfig(min(panelWidth, panelHeight) / 2),
             panelShader = "data/shaders/punch/punch",
             alphaMode = AlphaMode.HOLE_PUNCH,
             includeGlass = false,
+            sceneMeshCreator = { texture: SceneTexture ->
+              val unlitMaterial =
+                  SceneMaterial(texture, AlphaMode.OPAQUE, SceneMaterial.UNLIT_SHADER)
+              createCubemap(1.0f, unlitMaterial)
+            },
         )
 
     VIDEO_360 ->
@@ -137,10 +144,14 @@ fun MediaModel.minimizedPanelConfigOptions(): PanelConfigOptions {
             height = min(panelWidth, panelHeight),
             layoutWidthInPx = layoutWidthInPx,
             layoutHeightInPx = layoutHeightInPx,
-            layerConfig = EquirectLayerConfig(min(panelWidth, panelHeight) / 2),
             panelShader = "data/shaders/punch/punch",
             alphaMode = AlphaMode.HOLE_PUNCH,
             includeGlass = false,
+            sceneMeshCreator = { texture: SceneTexture ->
+              val unlitMaterial =
+                  SceneMaterial(texture, AlphaMode.OPAQUE, SceneMaterial.UNLIT_SHADER)
+              createSphere(1.0f, 32, 32, unlitMaterial)
+            },
         )
 
     VIDEO_SPATIAL ->
@@ -204,10 +215,14 @@ fun MediaModel.maximizedPanelConfigOptions(): PanelConfigOptions {
             height = panelHeight,
             layoutWidthInPx = layoutWidthInPx,
             layoutHeightInPx = layoutHeightInPx,
-            layerConfig = EquirectLayerConfig(2.0f),
             panelShader = "data/shaders/punch/punch",
             alphaMode = AlphaMode.HOLE_PUNCH,
             includeGlass = false,
+            sceneMeshCreator = { texture: SceneTexture ->
+              val unlitMaterial =
+                  SceneMaterial(texture, AlphaMode.OPAQUE, SceneMaterial.UNLIT_SHADER)
+              createCubemap(2.0f, unlitMaterial)
+            },
         )
 
     VIDEO_360 ->
@@ -216,10 +231,14 @@ fun MediaModel.maximizedPanelConfigOptions(): PanelConfigOptions {
             height = panelHeight,
             layoutWidthInPx = layoutWidthInPx,
             layoutHeightInPx = layoutHeightInPx,
-            layerConfig = EquirectLayerConfig(2.0f),
             panelShader = "data/shaders/punch/punch",
             alphaMode = AlphaMode.HOLE_PUNCH,
             includeGlass = false,
+            sceneMeshCreator = { texture: SceneTexture ->
+              val unlitMaterial =
+                  SceneMaterial(texture, AlphaMode.OPAQUE, SceneMaterial.UNLIT_SHADER)
+              createSphere(2.0f, 32, 32, unlitMaterial)
+            },
         )
   }
 }
@@ -244,4 +263,141 @@ fun MediaModel.maximizedBottomCenterPanelVector3(): Vector3 {
 
 private fun dpToPx(dp: Int): Int {
   return ((dp * DEFAULT_DPI).toFloat() / 160f).toInt()
+}
+
+private fun createSphere(
+  radius: Float,
+  longitudes: Int,
+  latitudes: Int,
+  material: SceneMaterial
+): SceneMesh {
+  val positions = mutableListOf<Float>()
+  val normals = mutableListOf<Float>()
+  val uvs = mutableListOf<Float>()
+  val indices = mutableListOf<Int>()
+
+  for (lat in 0..latitudes) {
+    val theta = lat * PI / latitudes
+    val sinTheta = sin(theta)
+    val cosTheta = cos(theta)
+
+    for (lon in 0..longitudes) {
+      val phi = lon * 2 * PI / longitudes
+      val sinPhi = sin(phi)
+      val cosPhi = cos(phi)
+
+      val x = cosPhi * sinTheta
+      val y = cosTheta
+      val z = sinPhi * sinTheta
+      val u = 1 - (lon.toFloat() / longitudes)
+      val v = 1 - (lat.toFloat() / latitudes)
+
+      normals.add(-x.toFloat())
+      normals.add(-y.toFloat())
+      normals.add(-z.toFloat())
+      uvs.add(u)
+      uvs.add(v)
+      positions.add(-x.toFloat() * radius)
+      positions.add(-y.toFloat() * radius)
+      positions.add(-z.toFloat() * radius)
+    }
+  }
+
+  for (lat in 0 until latitudes) {
+    for (lon in 0 until longitudes) {
+      val first = (lat * (longitudes + 1)) + lon
+      val second = first + longitudes + 1
+      indices.add(first)
+      indices.add(second)
+      indices.add(first + 1)
+      indices.add(second)
+      indices.add(second + 1)
+      indices.add(first + 1)
+    }
+  }
+
+  val vertexCount = positions.size / 3
+  val colors = IntArray(vertexCount) { -1 } // Use white as the default color
+
+  return SceneMesh.meshWithMaterials(
+      positions = positions.toFloatArray(),
+      normals = normals.toFloatArray(),
+      uvs = uvs.toFloatArray(),
+      colors = colors,
+      indices = indices.toIntArray(),
+      materialRanges = intArrayOf(0, indices.size),
+      materials = arrayOf(material),
+      createBVH = true
+  )
+}
+
+private fun createCubemap(size: Float, material: SceneMaterial): SceneMesh {
+  val s = size / 2f
+  val positions =
+      floatArrayOf(
+          // Front face
+          -s, -s, s, s, -s, s, s, s, s, -s, s, s,
+          // Back face
+          s, -s, -s, -s, -s, -s, -s, s, -s, s, s, -s,
+          // Left face
+          -s, -s, -s, -s, -s, s, -s, s, s, -s, s, -s,
+          // Right face
+          s, -s, s, s, -s, -s, s, s, -s, s, s, s,
+          // Top face
+          -s, s, s, s, s, s, s, s, -s, -s, s, -s,
+          // Bottom face
+          -s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s,
+      )
+  val normals =
+      floatArrayOf(
+          // Front face
+          0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f,
+          // Back face
+          0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+          // Left face
+          1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f,
+          // Right face
+          -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f,
+          // Top face
+          0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f,
+          // Bottom face
+          0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f,
+      )
+  val uvs =
+      floatArrayOf(
+          // Front face
+          0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+          // Back face
+          0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+          // Left face
+          0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+          // Right face
+          0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+          // Top face
+          0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+          // Bottom face
+          0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+      )
+  val indices =
+      intArrayOf(
+          0, 1, 2, 0, 2, 3, // Front
+          4, 5, 6, 4, 6, 7, // Back
+          8, 9, 10, 8, 10, 11, // Left
+          12, 13, 14, 12, 14, 15, // Right
+          16, 17, 18, 16, 18, 19, // Top
+          20, 21, 22, 20, 22, 23 // Bottom
+          )
+
+  val vertexCount = positions.size / 3
+  val colors = IntArray(vertexCount) { -1 }
+
+  return SceneMesh.meshWithMaterials(
+      positions = positions,
+      normals = normals,
+      uvs = uvs,
+      colors = colors,
+      indices = indices,
+      materialRanges = intArrayOf(0, indices.size),
+      materials = arrayOf(material),
+      createBVH = true)
 }
