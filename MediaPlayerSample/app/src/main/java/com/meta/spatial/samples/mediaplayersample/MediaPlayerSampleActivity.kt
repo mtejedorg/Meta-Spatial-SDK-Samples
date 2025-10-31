@@ -54,6 +54,7 @@ import com.meta.spatial.toolkit.Grabbable
 import com.meta.spatial.toolkit.LayoutXMLPanelRegistration
 import com.meta.spatial.toolkit.MediaPanelRenderOptions
 import com.meta.spatial.toolkit.MediaPanelSettings
+import com.meta.spatial.toolkit.MediaPanelShapeOptions
 import com.meta.spatial.toolkit.Mesh
 import com.meta.spatial.toolkit.Panel
 import com.meta.spatial.toolkit.PanelRegistration

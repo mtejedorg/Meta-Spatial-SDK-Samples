@@ -401,3 +401,37 @@ private fun createCubemap(size: Float, material: SceneMaterial): SceneMesh {
       materials = arrayOf(material),
       createBVH = true)
 }
+
+private fun createQuad(width: Float, height: Float, material: SceneMaterial): SceneMesh {
+  val w = width / 2f
+  val h = height / 2f
+  val positions =
+    floatArrayOf(
+      -w, -h, 0f, w, -h, 0f, w, h, 0f, -w, h, 0f,
+    )
+  val normals =
+    floatArrayOf(
+      0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+    )
+  val uvs =
+    floatArrayOf(
+      0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+    )
+  val indices =
+    intArrayOf(
+      0, 1, 2, 0, 2, 3,
+    )
+
+  val vertexCount = positions.size / 3
+  val colors = IntArray(vertexCount) { -1 }
+
+  return SceneMesh.meshWithMaterials(
+    positions = positions,
+    normals = normals,
+    uvs = uvs,
+    colors = colors,
+    indices = indices,
+    materialRanges = intArrayOf(0, indices.size),
+    materials = arrayOf(material),
+    createBVH = true)
+}
