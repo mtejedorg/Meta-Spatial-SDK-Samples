@@ -152,177 +152,6 @@ class ExoVideoEntity(
         }
     }
 
-    private fun createSphere(
-        radius: Float,
-        longitudes: Int,
-        latitudes: Int,
-        material: SceneMaterial
-    ): SceneMesh {
-        val positions = mutableListOf<Float>()
-        val normals = mutableListOf<Float>()
-        val uvs = mutableListOf<Float>()
-        val indices = mutableListOf<Int>()
-
-        for (lat in 0..latitudes) {
-            val theta = lat * PI / latitudes
-            val sinTheta = sin(theta)
-            val cosTheta = cos(theta)
-
-            for (lon in 0..longitudes) {
-                val phi = lon * 2 * PI / longitudes
-                val sinPhi = sin(phi)
-                val cosPhi = cos(phi)
-
-                val x = cosPhi * sinTheta
-                val y = cosTheta
-                val z = sinPhi * sinTheta
-                val u = 1 - (lon.toFloat() / longitudes)
-                val v = 1 - (lat.toFloat() / latitudes)
-
-                normals.add(-x.toFloat())
-                normals.add(-y.toFloat())
-                normals.add(-z.toFloat())
-                uvs.add(u)
-                uvs.add(v)
-                positions.add(-x.toFloat() * radius)
-                positions.add(-y.toFloat() * radius)
-                positions.add(-z.toFloat() * radius)
-            }
-        }
-
-        for (lat in 0 until latitudes) {
-            for (lon in 0 until longitudes) {
-                val first = (lat * (longitudes + 1)) + lon
-                val second = first + longitudes + 1
-                indices.add(first)
-                indices.add(second)
-                indices.add(first + 1)
-                indices.add(second)
-                indices.add(second + 1)
-                indices.add(first + 1)
-            }
-        }
-
-        val vertexCount = positions.size / 3
-        val colors = IntArray(vertexCount) { -1 } // Use white as the default color
-
-        return SceneMesh.meshWithMaterials(
-            positions = positions.toFloatArray(),
-            normals = normals.toFloatArray(),
-            uvs = uvs.toFloatArray(),
-            colors = colors,
-            indices = indices.toIntArray(),
-            materialRanges = intArrayOf(0, indices.size),
-            materials = arrayOf(material),
-            createBVH = true
-        )
-    }
-
-    private fun createCubemap(size: Float, material: SceneMaterial): SceneMesh {
-        val s = size / 2f
-        val positions =
-            floatArrayOf(
-                // Front face
-                -s, -s, s, s, -s, s, s, s, s, -s, s, s,
-                // Back face
-                s, -s, -s, -s, -s, -s, -s, s, -s, s, s, -s,
-                // Left face
-                -s, -s, -s, -s, -s, s, -s, s, s, -s, s, -s,
-                // Right face
-                s, -s, s, s, -s, -s, s, s, -s, s, s, s,
-                // Top face
-                -s, s, s, s, s, s, s, s, -s, -s, s, -s,
-                // Bottom face
-                -s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s,
-            )
-        val normals =
-            floatArrayOf(
-                // Front face
-                0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f,
-                // Back face
-                0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
-                // Left face
-                1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f,
-                // Right face
-                -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f,
-                // Top face
-                0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f,
-                // Bottom face
-                0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f,
-            )
-        val uvs =
-            floatArrayOf(
-                // Front face
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-                // Back face
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-                // Left face
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-                // Right face
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-                // Top face
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-                // Bottom face
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-            )
-        val indices =
-            intArrayOf(
-                0, 1, 2, 0, 2, 3, // Front
-                4, 5, 6, 4, 6, 7, // Back
-                8, 9, 10, 8, 10, 11, // Left
-                12, 13, 14, 12, 14, 15, // Right
-                16, 17, 18, 16, 18, 19, // Top
-                20, 21, 22, 20, 22, 23 // Bottom
-            )
-
-        val vertexCount = positions.size / 3
-        val colors = IntArray(vertexCount) { -1 }
-
-        return SceneMesh.meshWithMaterials(
-            positions = positions,
-            normals = normals,
-            uvs = uvs,
-            colors = colors,
-            indices = indices,
-            materialRanges = intArrayOf(0, indices.size),
-            materials = arrayOf(material),
-            createBVH = true)
-    }
-
-    private fun createQuad(width: Float, height: Float, material: SceneMaterial): SceneMesh {
-        val w = width / 2f
-        val h = height / 2f
-        val positions =
-            floatArrayOf(
-                -w, -h, 0f, w, -h, 0f, w, h, 0f, -w, h, 0f,
-            )
-        val normals =
-            floatArrayOf(
-                0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
-            )
-        val uvs =
-            floatArrayOf(
-                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
-            )
-        val indices =
-            intArrayOf(
-                0, 1, 2, 0, 2, 3,
-            )
-
-        val vertexCount = positions.size / 3
-        val colors = IntArray(vertexCount) { -1 }
-
-        return SceneMesh.meshWithMaterials(
-            positions = positions,
-            normals = normals,
-            uvs = uvs,
-            colors = colors,
-            indices = indices,
-            materialRanges = intArrayOf(0, indices.size),
-            materials = arrayOf(material),
-            createBVH = true)
-    }
-
     /**
      * The Readable surface panel supports fetching the panel image for use in custom shaders. Less
      * performant than regular media panel
@@ -331,8 +160,8 @@ class ExoVideoEntity(
         mediaSource: MediaSource,
     ) {
         val panelSize = Vector2(mediaSource.aspectRatio * BASE_PANEL_SIZE, BASE_PANEL_SIZE)
-        val readableSettings = ReadableMediaPanelSettings(
-            shape = QuadShapeOptions(width = panelSize.x, height = panelSize.y),
+        val panelSettings = ReadableMediaPanelSettings(
+            //shape = QuadShapeOptions(width = panelSize.x, height = panelSize.y),
             style = PanelStyleOptions(R.style.PanelAppThemeTransparent),
             display =
                 PixelDisplayOptions(
@@ -352,12 +181,12 @@ class ExoVideoEntity(
                             ButtonBits.ButtonTriggerR
                 ),
         )
-        readableSettings.toPanelConfigOptions().apply {
+        val panelConfig = panelSettings.toPanelConfigOptions().apply {
             sceneMeshCreator = {texture: SceneTexture ->
                 val unlitMaterial = SceneMaterial(texture, AlphaMode.OPAQUE, SceneMaterial.UNLIT_SHADER)
-                //createSphere(1.0f,32,32, unlitMaterial)
+                createSphere(1.0f,32,32, unlitMaterial)
                 //createCubemap(1.0f, unlitMaterial)
-                createQuad(16.0f, 9.0f, unlitMaterial)
+                //createQuad(16.0f, 9.0f, unlitMaterial)
             }
         }
         SpatialActivityManager.executeOnVrActivity<AppSystemActivity> { immersiveActivity ->
@@ -374,7 +203,7 @@ class ExoVideoEntity(
                         exoPlayer.setVideoSurface(surface)
                         addLinkSpatialAudioListener(exoPlayer, panelEnt)
                     },
-                    settingsCreator = {readableSettings},
+                    settingsCreator = {panelConfig},
                 )
             )
         }
@@ -540,3 +369,174 @@ enum class PanelRenderingStyle {
 }
 
 const val EXO_VIDEO_ENTITY_TAG = "ExoVideoEntity"
+
+private fun createSphere(
+    radius: Float,
+    longitudes: Int,
+    latitudes: Int,
+    material: SceneMaterial
+): SceneMesh {
+    val positions = mutableListOf<Float>()
+    val normals = mutableListOf<Float>()
+    val uvs = mutableListOf<Float>()
+    val indices = mutableListOf<Int>()
+
+    for (lat in 0..latitudes) {
+        val theta = lat * PI / latitudes
+        val sinTheta = sin(theta)
+        val cosTheta = cos(theta)
+
+        for (lon in 0..longitudes) {
+            val phi = lon * 2 * PI / longitudes
+            val sinPhi = sin(phi)
+            val cosPhi = cos(phi)
+
+            val x = cosPhi * sinTheta
+            val y = cosTheta
+            val z = sinPhi * sinTheta
+            val u = 1 - (lon.toFloat() / longitudes)
+            val v = 1 - (lat.toFloat() / latitudes)
+
+            normals.add(-x.toFloat())
+            normals.add(-y.toFloat())
+            normals.add(-z.toFloat())
+            uvs.add(u)
+            uvs.add(v)
+            positions.add(-x.toFloat() * radius)
+            positions.add(-y.toFloat() * radius)
+            positions.add(-z.toFloat() * radius)
+        }
+    }
+
+    for (lat in 0 until latitudes) {
+        for (lon in 0 until longitudes) {
+            val first = (lat * (longitudes + 1)) + lon
+            val second = first + longitudes + 1
+            indices.add(first)
+            indices.add(second)
+            indices.add(first + 1)
+            indices.add(second)
+            indices.add(second + 1)
+            indices.add(first + 1)
+        }
+    }
+
+    val vertexCount = positions.size / 3
+    val colors = IntArray(vertexCount) { -1 } // Use white as the default color
+
+    return SceneMesh.meshWithMaterials(
+        positions = positions.toFloatArray(),
+        normals = normals.toFloatArray(),
+        uvs = uvs.toFloatArray(),
+        colors = colors,
+        indices = indices.toIntArray(),
+        materialRanges = intArrayOf(0, indices.size),
+        materials = arrayOf(material),
+        createBVH = true
+    )
+}
+
+private fun createCubemap(size: Float, material: SceneMaterial): SceneMesh {
+    val s = size / 2f
+    val positions =
+        floatArrayOf(
+            // Front face
+            -s, -s, s, s, -s, s, s, s, s, -s, s, s,
+            // Back face
+            s, -s, -s, -s, -s, -s, -s, s, -s, s, s, -s,
+            // Left face
+            -s, -s, -s, -s, -s, s, -s, s, s, -s, s, -s,
+            // Right face
+            s, -s, s, s, -s, -s, s, s, -s, s, s, s,
+            // Top face
+            -s, s, s, s, s, s, s, s, -s, -s, s, -s,
+            // Bottom face
+            -s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s,
+        )
+    val normals =
+        floatArrayOf(
+            // Front face
+            0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f,
+            // Back face
+            0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+            // Left face
+            1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f,
+            // Right face
+            -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f,
+            // Top face
+            0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f,
+            // Bottom face
+            0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f,
+        )
+    val uvs =
+        floatArrayOf(
+            // Front face
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            // Back face
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            // Left face
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            // Right face
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            // Top face
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            // Bottom face
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+        )
+    val indices =
+        intArrayOf(
+            0, 1, 2, 0, 2, 3, // Front
+            4, 5, 6, 4, 6, 7, // Back
+            8, 9, 10, 8, 10, 11, // Left
+            12, 13, 14, 12, 14, 15, // Right
+            16, 17, 18, 16, 18, 19, // Top
+            20, 21, 22, 20, 22, 23 // Bottom
+        )
+
+    val vertexCount = positions.size / 3
+    val colors = IntArray(vertexCount) { -1 }
+
+    return SceneMesh.meshWithMaterials(
+        positions = positions,
+        normals = normals,
+        uvs = uvs,
+        colors = colors,
+        indices = indices,
+        materialRanges = intArrayOf(0, indices.size),
+        materials = arrayOf(material),
+        createBVH = true)
+}
+
+private fun createQuad(width: Float, height: Float, material: SceneMaterial): SceneMesh {
+    val w = width / 2f
+    val h = height / 2f
+    val positions =
+        floatArrayOf(
+            -w, -h, 0f, w, -h, 0f, w, h, 0f, -w, h, 0f,
+        )
+    val normals =
+        floatArrayOf(
+            0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+        )
+    val uvs =
+        floatArrayOf(
+            0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+        )
+    val indices =
+        intArrayOf(
+            0, 1, 2, 0, 2, 3,
+        )
+
+    val vertexCount = positions.size / 3
+    val colors = IntArray(vertexCount) { -1 }
+
+    return SceneMesh.meshWithMaterials(
+        positions = positions,
+        normals = normals,
+        uvs = uvs,
+        colors = colors,
+        indices = indices,
+        materialRanges = intArrayOf(0, indices.size),
+        materials = arrayOf(material),
+        createBVH = true)
+}

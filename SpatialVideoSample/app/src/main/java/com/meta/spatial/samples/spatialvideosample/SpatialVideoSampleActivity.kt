@@ -71,7 +71,6 @@ import com.meta.spatial.runtime.SceneObject
 import com.meta.spatial.runtime.SceneTexture
 import com.meta.spatial.runtime.StereoMode
 import com.meta.spatial.runtime.TriangleMesh
-import com.meta.spatial.runtime.panel.style
 import com.meta.spatial.toolkit.ActivityPanelRegistration
 import com.meta.spatial.toolkit.AppSystemActivity
 import com.meta.spatial.toolkit.AvatarSystem
@@ -106,6 +105,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 fun lerp(start: Float, end: Float, fraction: Float): Float = start + (end - start) * fraction
 
@@ -343,147 +345,30 @@ class SpatialVideoSampleActivity : AppSystemActivity() {
   @androidx.annotation.OptIn(UnstableApi::class)
   private fun createVideoPanel() {
     val videoPanelEntity = Entity(R.id.spatialized_video_panel)
-    val settings =
+    val panelSettings =
         MediaPanelSettings(
             shape = QuadShapeOptions(width = MR_SCREEN_WIDTH, height = MR_SCREEN_HEIGHT),
             display = PixelDisplayOptions(width = 3840, height = 1080),
             rendering = MediaPanelRenderOptions(stereoMode = StereoMode.LeftRight),
         )
+
+      val panelConfig = panelSettings.toPanelConfigOptions().apply {
+          sceneMeshCreator = {texture: SceneTexture ->
+              triangleMesh(width, height, texture, stereoMode)
+
+              //val unlitMaterial = SceneMaterial(texture, AlphaMode.OPAQUE, SceneMaterial.UNLIT_SHADER)
+
+              //createSphere(1.0f, 32, 32, unlitMaterial)
+              //createCubemap(1.0f, unlitMaterial)
+              //createQuad(16.0f, 9.0f, unlitMaterial)
+          }
+      }
+
     val panelSceneObject =
         PanelSceneObject(
                 scene,
                 videoPanelEntity,
-                settings.toPanelConfigOptions().apply {
-                  sceneMeshCreator = { texture: SceneTexture ->
-                    val halfHeight = height / 2f
-                    val halfWidth = width / 2f
-                    val halfDepth = 0.1f
-                    val rounding = 0.075f
-                    val triMesh =
-                        TriangleMesh(
-                            8,
-                            18,
-                            intArrayOf(6, 6, 12, 6, 0, 6),
-                            arrayOf(
-                                SceneMaterial(
-                                        texture,
-                                        AlphaMode.TRANSLUCENT,
-                                        "data/shaders/spatial/reflect",
-                                    )
-                                    .apply {
-                                      setStereoMode(stereoMode)
-                                      setUnlit(true)
-                                    },
-                                SceneMaterial(
-                                        texture,
-                                        AlphaMode.TRANSLUCENT,
-                                        "data/shaders/spatial/shadow",
-                                    )
-                                    .apply { setUnlit(true) },
-                                SceneMaterial(
-                                        texture,
-                                        AlphaMode.HOLE_PUNCH,
-                                        SceneMaterial.HOLE_PUNCH_SHADER,
-                                    )
-                                    .apply {
-                                      setStereoMode(stereoMode)
-                                      setUnlit(true)
-                                    },
-                            ),
-                        )
-                    triMesh.updateGeometry(
-                        0,
-                        floatArrayOf(
-                            -halfWidth,
-                            -halfHeight,
-                            0f,
-                            halfWidth,
-                            -halfHeight,
-                            0f,
-                            halfWidth,
-                            halfHeight,
-                            0f,
-                            -halfWidth,
-                            halfHeight,
-                            0f,
-                            // shadow
-                            -halfWidth,
-                            -halfHeight,
-                            halfDepth,
-                            halfWidth,
-                            -halfHeight,
-                            halfDepth,
-                            halfWidth,
-                            -halfHeight,
-                            -halfDepth,
-                            -halfWidth,
-                            -halfHeight,
-                            -halfDepth,
-                        ),
-                        floatArrayOf(
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                            0f,
-                            0f,
-                            1f,
-                        ),
-                        floatArrayOf(
-                            // front
-                            0f,
-                            1f,
-                            1f,
-                            1f,
-                            1f,
-                            0f,
-                            0f,
-                            0f,
-                            // shadow
-                            halfWidth - rounding,
-                            halfDepth - rounding,
-                            halfWidth - rounding,
-                            halfDepth - rounding,
-                            halfWidth - rounding,
-                            halfDepth - rounding,
-                            halfWidth - rounding,
-                            halfDepth - rounding,
-                        ),
-                        intArrayOf(
-                            Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
-                        ),
-                    )
-                    triMesh.updatePrimitives(
-                        0,
-                        intArrayOf(0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6),
-                    )
-                    SceneMesh.fromTriangleMesh(triMesh, false)
-                  }
-                },
+                panelConfig
             )
             .apply {
               player.repeatMode = Player.REPEAT_MODE_ONE
@@ -898,6 +783,314 @@ class SpatialVideoSampleActivity : AppSystemActivity() {
     // spawns debug menu if true
     const val DEBUG: Boolean = false
   }
+
+
+
+    private fun triangleMesh (
+        width: Float, height: Float,
+        texture: SceneTexture,
+        stereoMode: StereoMode) : SceneMesh{
+
+        val halfHeight = height / 2f
+        val halfWidth = width / 2f
+        val halfDepth = 0.1f
+        val rounding = 0.075f
+        val triMesh =
+            TriangleMesh(
+                8,
+                18,
+                intArrayOf(6, 6, 12, 6, 0, 6),
+                arrayOf(
+                    SceneMaterial(
+                        texture,
+                        AlphaMode.TRANSLUCENT,
+                        "data/shaders/spatial/reflect",
+                    )
+                        .apply {
+                            setStereoMode(stereoMode)
+                            setUnlit(true)
+                        },
+                    SceneMaterial(
+                        texture,
+                        AlphaMode.TRANSLUCENT,
+                        "data/shaders/spatial/shadow",
+                    )
+                        .apply { setUnlit(true) },
+                    SceneMaterial(
+                        texture,
+                        AlphaMode.HOLE_PUNCH,
+                        SceneMaterial.HOLE_PUNCH_SHADER,
+                    )
+                        .apply {
+                            setStereoMode(stereoMode)
+                            setUnlit(true)
+                        },
+                ),
+            )
+        triMesh.updateGeometry(
+            0,
+            floatArrayOf(
+                -halfWidth,
+                -halfHeight,
+                0f,
+                halfWidth,
+                -halfHeight,
+                0f,
+                halfWidth,
+                halfHeight,
+                0f,
+                -halfWidth,
+                halfHeight,
+                0f,
+                // shadow
+                -halfWidth,
+                -halfHeight,
+                halfDepth,
+                halfWidth,
+                -halfHeight,
+                halfDepth,
+                halfWidth,
+                -halfHeight,
+                -halfDepth,
+                -halfWidth,
+                -halfHeight,
+                -halfDepth,
+            ),
+            floatArrayOf(
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                1f,
+            ),
+            floatArrayOf(
+                // front
+                0f,
+                1f,
+                1f,
+                1f,
+                1f,
+                0f,
+                0f,
+                0f,
+                // shadow
+                halfWidth - rounding,
+                halfDepth - rounding,
+                halfWidth - rounding,
+                halfDepth - rounding,
+                halfWidth - rounding,
+                halfDepth - rounding,
+                halfWidth - rounding,
+                halfDepth - rounding,
+            ),
+            intArrayOf(
+                Color.WHITE,
+                Color.WHITE,
+                Color.WHITE,
+                Color.WHITE,
+                Color.WHITE,
+                Color.WHITE,
+                Color.WHITE,
+                Color.WHITE,
+            ),
+        )
+        triMesh.updatePrimitives(
+            0,
+            intArrayOf(0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6),
+        )
+        return SceneMesh.fromTriangleMesh(triMesh, false)
+    }
+
+    private fun createSphere(
+        radius: Float,
+        longitudes: Int,
+        latitudes: Int,
+        material: SceneMaterial
+    ): SceneMesh {
+        val positions = mutableListOf<Float>()
+        val normals = mutableListOf<Float>()
+        val uvs = mutableListOf<Float>()
+        val indices = mutableListOf<Int>()
+
+        for (lat in 0..latitudes) {
+            val theta = lat * PI / latitudes
+            val sinTheta = sin(theta)
+            val cosTheta = cos(theta)
+
+            for (lon in 0..longitudes) {
+                val phi = lon * 2 * PI / longitudes
+                val sinPhi = sin(phi)
+                val cosPhi = cos(phi)
+
+                val x = cosPhi * sinTheta
+                val y = cosTheta
+                val z = sinPhi * sinTheta
+                val u = 1 - (lon.toFloat() / longitudes)
+                val v = 1 - (lat.toFloat() / latitudes)
+
+                normals.add(-x.toFloat())
+                normals.add(-y.toFloat())
+                normals.add(-z.toFloat())
+                uvs.add(u)
+                uvs.add(v)
+                positions.add(-x.toFloat() * radius)
+                positions.add(-y.toFloat() * radius)
+                positions.add(-z.toFloat() * radius)
+            }
+        }
+
+        for (lat in 0 until latitudes) {
+            for (lon in 0 until longitudes) {
+                val first = (lat * (longitudes + 1)) + lon
+                val second = first + longitudes + 1
+                indices.add(first)
+                indices.add(second)
+                indices.add(first + 1)
+                indices.add(second)
+                indices.add(second + 1)
+                indices.add(first + 1)
+            }
+        }
+
+        val vertexCount = positions.size / 3
+        val colors = IntArray(vertexCount) { -1 } // Use white as the default color
+
+        return SceneMesh.meshWithMaterials(
+            positions = positions.toFloatArray(),
+            normals = normals.toFloatArray(),
+            uvs = uvs.toFloatArray(),
+            colors = colors,
+            indices = indices.toIntArray(),
+            materialRanges = intArrayOf(0, indices.size),
+            materials = arrayOf(material),
+            createBVH = true
+        )
+    }
+
+    private fun createCubemap(size: Float, material: SceneMaterial): SceneMesh {
+        val s = size / 2f
+        val positions =
+            floatArrayOf(
+                // Front face
+                -s, -s, s, s, -s, s, s, s, s, -s, s, s,
+                // Back face
+                s, -s, -s, -s, -s, -s, -s, s, -s, s, s, -s,
+                // Left face
+                -s, -s, -s, -s, -s, s, -s, s, s, -s, s, -s,
+                // Right face
+                s, -s, s, s, -s, -s, s, s, -s, s, s, s,
+                // Top face
+                -s, s, s, s, s, s, s, s, -s, -s, s, -s,
+                // Bottom face
+                -s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s,
+            )
+        val normals =
+            floatArrayOf(
+                // Front face
+                0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f,
+                // Back face
+                0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+                // Left face
+                1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f,
+                // Right face
+                -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f,
+                // Top face
+                0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f, 0f, -1f, 0f,
+                // Bottom face
+                0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f,
+            )
+        val uvs =
+            floatArrayOf(
+                // Front face
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+                // Back face
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+                // Left face
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+                // Right face
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+                // Top face
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+                // Bottom face
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            )
+        val indices =
+            intArrayOf(
+                0, 1, 2, 0, 2, 3, // Front
+                4, 5, 6, 4, 6, 7, // Back
+                8, 9, 10, 8, 10, 11, // Left
+                12, 13, 14, 12, 14, 15, // Right
+                16, 17, 18, 16, 18, 19, // Top
+                20, 21, 22, 20, 22, 23 // Bottom
+            )
+
+        val vertexCount = positions.size / 3
+        val colors = IntArray(vertexCount) { -1 }
+
+        return SceneMesh.meshWithMaterials(
+            positions = positions,
+            normals = normals,
+            uvs = uvs,
+            colors = colors,
+            indices = indices,
+            materialRanges = intArrayOf(0, indices.size),
+            materials = arrayOf(material),
+            createBVH = true)
+    }
+
+    private fun createQuad(width: Float, height: Float, material: SceneMaterial): SceneMesh {
+        val w = width / 2f
+        val h = height / 2f
+        val positions =
+            floatArrayOf(
+                -w, -h, 0f, w, -h, 0f, w, h, 0f, -w, h, 0f,
+            )
+        val normals =
+            floatArrayOf(
+                0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+            )
+        val uvs =
+            floatArrayOf(
+                0f, 1f, 1f, 1f, 1f, 0f, 0f, 0f,
+            )
+        val indices =
+            intArrayOf(
+                0, 1, 2, 0, 2, 3,
+            )
+
+        val vertexCount = positions.size / 3
+        val colors = IntArray(vertexCount) { -1 }
+
+        return SceneMesh.meshWithMaterials(
+            positions = positions,
+            normals = normals,
+            uvs = uvs,
+            colors = colors,
+            indices = indices,
+            materialRanges = intArrayOf(0, indices.size),
+            materials = arrayOf(material),
+            createBVH = true)
+    }
+
 }
 
 class CustomRenderersFactory : DefaultRenderersFactory {
