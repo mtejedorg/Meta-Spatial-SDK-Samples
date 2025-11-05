@@ -123,6 +123,8 @@ class ImmersiveViewModel(
         when (homeItem.media.videoShape) {
           MediaSource.VideoShape.Rectilinear -> CinemaState.TV
           MediaSource.VideoShape.Equirect180 -> CinemaState.Equirect180
+            MediaSource.VideoShape.Equirect360 -> TODO()
+            MediaSource.VideoShape.YBVR -> TODO()
         }
       systemManager.findSystem<PanelReadySystem>().executeWhenReady(currentExoPanel!!.entity) {
         currentExoPanel!!.showPlayer {

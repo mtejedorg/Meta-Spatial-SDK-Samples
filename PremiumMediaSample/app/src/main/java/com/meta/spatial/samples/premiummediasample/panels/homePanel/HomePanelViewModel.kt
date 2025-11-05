@@ -14,6 +14,7 @@ import com.meta.spatial.samples.premiummediasample.data.HomeItem
 import com.meta.spatial.samples.premiummediasample.data.MediaSource
 import com.meta.spatial.samples.premiummediasample.data.Size
 import com.meta.spatial.samples.premiummediasample.data.VideoSource
+import com.ybvr.ybvrlib.GeometryID
 
 class HomePanelViewModel {
 
@@ -22,17 +23,89 @@ class HomePanelViewModel {
   var items: List<HomeItem> =
       listOf(
           HomeItem(
-              id = "sk8chicken",
+              id = "ybvr1",
               thumbId = R.drawable.poster_sk8_chickens,
               description =
                   Description(
-                      title = "Sk8 Chickens",
-                      description = "Rectilinear Stereoscopic Video",
+                      title = "Direct To Surface",
+                      description = "Chicken Rectilinear Direct To Surface",
                   ),
               showInMenu = true,
               media =
                   MediaSource(
                       stereoMode = StereoMode.LeftRight,
+                      renderingStyle = MediaSource.PanelRenderingStyle.DIRECT_TO_SURFACE,
+                      videoShape = MediaSource.VideoShape.Rectilinear,
+                      geometry = GeometryID.Plane,
+                      videoDimensionsPx = Size(1920 * 2, 1080),
+                      mips = 9,
+                      videoSource =
+                          VideoSource.Url(
+                              "https://dw9dv4drqa1gx.cloudfront.net/DASH_Chickens/SK8_Chickens_3840x1080_Stereo.mpd"
+                          ),
+                  ),
+          ),
+          HomeItem(
+              id = "ybvr2",
+              thumbId = R.drawable.poster_sk8_chickens,
+              description =
+                  Description(
+                      title = "Readable",
+                      description = "Chicken Rectilinear Readable Surface",
+                  ),
+              showInMenu = true,
+              media =
+                  MediaSource(
+                      stereoMode = StereoMode.LeftRight,
+                      renderingStyle = MediaSource.PanelRenderingStyle.READABLE,
+                      videoShape = MediaSource.VideoShape.Rectilinear,
+                      geometry = GeometryID.Plane,
+                      videoDimensionsPx = Size(1920 * 2, 1080),
+                      mips = 9,
+                      videoSource =
+                          VideoSource.Url(
+                              "https://dw9dv4drqa1gx.cloudfront.net/DASH_Chickens/SK8_Chickens_3840x1080_Stereo.mpd"
+                          ),
+                  ),
+          ),
+          HomeItem(
+              id = "ybvr3",
+              thumbId = R.drawable.poster_sk8_chickens,
+              description =
+                  Description(
+                      title = "Custom Panel",
+                      description = "Chicken Rectilinear Panel",
+                  ),
+              showInMenu = true,
+              media =
+                  MediaSource(
+                      stereoMode = StereoMode.LeftRight,
+                      renderingStyle = MediaSource.PanelRenderingStyle.CUSTOM_PANEL,
+                      videoShape = MediaSource.VideoShape.Rectilinear,
+                      geometry = GeometryID.Plane,
+                      videoDimensionsPx = Size(1920 * 2, 1080),
+                      mips = 9,
+                      videoSource =
+                          VideoSource.Url(
+                              "https://dw9dv4drqa1gx.cloudfront.net/DASH_Chickens/SK8_Chickens_3840x1080_Stereo.mpd"
+                          ),
+                  ),
+          ),
+          HomeItem(
+              id = "ybvr4",
+              thumbId = R.drawable.poster_sk8_chickens,
+              description =
+                  Description(
+                      title = "Custom Direct to Surface",
+                      description = "Chicken Rectilinear Custom Direct To Surface",
+                  ),
+              showInMenu = true,
+              media =
+                  MediaSource(
+                      stereoMode = StereoMode.LeftRight,
+                      renderingStyle = MediaSource.PanelRenderingStyle.CUSTOM_DIRECT_TO_SURFACE,
+                      videoShape = MediaSource.VideoShape.Rectilinear,
+                      geometry = GeometryID.Plane,
                       videoDimensionsPx = Size(1920 * 2, 1080),
                       mips = 9,
                       videoSource =

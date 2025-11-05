@@ -4,6 +4,8 @@
   <item type="id" name="command_class" />
   <item type="id" name="video_id" />
   <item type="id" name="list_panel" />
-  <item type="id" name="video_panel_360" />
+  <item type="id" name="video_surface" />
+  <item type="id" name="readable_video_surface" />
+  <item type="id" name="video_panel" />
   <item type="id" name="mr_panel" />
 </resources>

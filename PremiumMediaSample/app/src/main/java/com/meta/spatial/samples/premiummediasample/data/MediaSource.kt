@@ -8,6 +8,7 @@
 package com.meta.spatial.samples.premiummediasample.data
 
 import com.meta.spatial.runtime.StereoMode
+import com.ybvr.ybvrlib.GeometryID
 import java.io.Serializable
 
 sealed class VideoSource : Serializable {
@@ -20,15 +21,26 @@ data class MediaSource(
     val videoSource: VideoSource,
     val stereoMode: StereoMode = StereoMode.None,
     val videoShape: VideoShape = VideoShape.Rectilinear,
+    val renderingStyle: PanelRenderingStyle = PanelRenderingStyle.DIRECT_TO_SURFACE,
     var videoDimensionsPx: Size = Size(1920, 1080),
     var position: Long = 0L,
     var mips: Int = 4,
     var audioCodecType: AudioCodecType = AudioCodecType.None,
+    val geometry: GeometryID = GeometryID.Equirectangular,
 ) : Serializable {
+
+    enum class PanelRenderingStyle {
+        READABLE,
+        DIRECT_TO_SURFACE,
+        CUSTOM_PANEL,
+        CUSTOM_DIRECT_TO_SURFACE
+    }
 
   enum class VideoShape {
     Rectilinear,
     Equirect180,
+    Equirect360,
+    YBVR
   }
 
   enum class AudioCodecType {

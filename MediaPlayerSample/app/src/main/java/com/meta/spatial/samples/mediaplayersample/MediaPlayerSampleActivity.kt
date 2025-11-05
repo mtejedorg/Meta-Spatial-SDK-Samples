@@ -320,27 +320,7 @@ class MediaPlayerSampleActivity : AppSystemActivity() {
                   display = ScreenFractionDisplayOptions(fraction = 0.15f),
               )
             },
-        ),
-        VideoSurfacePanelRegistration(
-            R.id.video_panel_360,
-            surfaceConsumer = { _, surface ->
-              exoPlayer =
-                  SimpleExoPlayer.Builder(this).build().apply {
-                    repeatMode = Player.REPEAT_MODE_ONE
-                    setVideoSurface(surface)
-                  }
-            },
-            settingsCreator = {
-              val SPHERE_RADIUS: Float = 300.0f
-              MediaPanelSettings(
-                  shape = Equirect360ShapeOptions(radius = SPHERE_RADIUS),
-                  // DisplayOptions will be ignored for surface panels
-                  display = PixelDisplayOptions(width = 100, height = 100),
-                  // always render the layer first (behind all the other layers)
-                  rendering = MediaPanelRenderOptions(stereoMode = StereoMode.UpDown, zIndex = -1),
-              )
-            },
-        ),
+        )
     )
   }
 

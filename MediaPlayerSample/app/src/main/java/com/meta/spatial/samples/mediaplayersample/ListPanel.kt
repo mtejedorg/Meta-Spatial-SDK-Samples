@@ -67,16 +67,26 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.meta.spatial.toolkit.SpatialActivityManager
+import com.ybvr.ybvrlib.GeometryID
 import kotlinx.coroutines.launch
 
 data class Movie(
     val id: Int,
     val title: String,
     val url: String,
+    val renderType : RenderType,
     val poster_path: Int,
     val youtubeId: String = "",
     val overview: String = "",
+    val geometries: Array<GeometryID> = arrayOf(GeometryID.Equirectangular)
 )
+
+enum class RenderType{
+    VideoSurface,
+    ReadableVideoSurface,
+    CustomPanelOptions,
+    CustomDirectToSurface
+}
 
 data class Video(val key: String, val type: String, val official: Boolean, val site: String)
 
@@ -97,6 +107,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.soloist_poster,
                 overview = "Demonstration of stereoscopic video",
                 url = "https://europe-cdn.origin.ybvr.com/streaming/player2_1/flyinghigh/manifest-v2.mpd",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = -2,
@@ -104,6 +116,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.soloist_poster,
                 overview = "Demonstration of stereoscopic video",
                 url = "https://nbatv-cdn.origin.ybvr.com/YBVR/LIVE/live.mpd",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = -1,
@@ -111,6 +125,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.soloist_poster,
                 overview = "Demonstration of stereoscopic video",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 0,
@@ -118,6 +134,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie00,
                 youtubeId = "zZIB1xJdamo",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 1,
@@ -125,6 +143,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie01,
                 youtubeId = "0qi6V-yOULg",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 2,
@@ -132,6 +152,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie02,
                 youtubeId = "JlSMZg5cwKQ",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 3,
@@ -139,6 +161,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie03,
                 youtubeId = "Exu7r2vZpcw",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 4,
@@ -146,6 +170,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie04,
                 youtubeId = "vMDIpFQYG4A",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 5,
@@ -153,6 +179,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie05,
                 youtubeId = "5AKl_cEB26c",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 6,
@@ -160,6 +188,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie06,
                 youtubeId = "dGPPIF71FBo",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 7,
@@ -167,6 +197,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie07,
                 youtubeId = "73lKUfuLw4A",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
             Movie(
                 id = 8,
@@ -175,6 +207,8 @@ class MovieViewModel : ViewModel() {
                 poster_path = R.drawable.movie08,
                 youtubeId = "SBljI8B2zj0",
                 url = "",
+                renderType = RenderType.CustomPanelOptions,
+                geometries = arrayOf(GeometryID.Equirectangular)
             ),
         )
   }
