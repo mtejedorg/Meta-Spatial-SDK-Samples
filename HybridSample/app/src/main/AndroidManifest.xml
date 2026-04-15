@@ -56,7 +56,7 @@
     <meta-data android:name="com.oculus.vr.focusaware" android:value="true" />
     <uses-native-library
       android:name="libossdk.oculus.so"
-      android:required="false"
+      android:required="true"
     />
     <activity
       android:name=".PancakeActivity"
@@ -72,6 +72,12 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+    <!--
+      Prevents activity recreation when configuration changes (e.g., detachable keyboard
+      attach/detach, screen rotation). This allows the app to handle these events gracefully
+      without restarting the activity.
+      See: https://developer.android.com/develop/ui/compose/quick-guides/content/manage-detachable-keyboards
+    -->
     <activity
       android:name="com.meta.spatial.samples.hybridsample.HybridSampleActivity"
       android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"

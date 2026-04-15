@@ -19,25 +19,27 @@ import com.meta.spatial.toolkit.Panel
 import com.meta.spatial.toolkit.Scale
 import com.meta.spatial.toolkit.Transform
 
-class MenuSpawner() : SystemBase() {
-
+/** System that spawns menu UI panels for newly detected QR codes. */
+class MenuSpawner : SystemBase() {
+  /** Maps QR code entities to their corresponding menu entities. */
   private val qrCodeToEntity = mutableMapOf<Entity, Entity>()
 
+  /** Monitors for newly tracked QR codes and spawns a menu panel for each one. */
   override fun execute() {
     Query.where { changed(TrackedQrCode.id) }
         .eval()
-        .forEach { qrCodeEnt ->
-          if (!qrCodeToEntity.containsKey(qrCodeEnt)) {
+        .forEach { qrCodeEntity ->
+          if (qrCodeEntity !in qrCodeToEntity) {
             val menu =
                 Entity.create(
-                    TransformParentFollow(qrCodeEnt),
+                    TransformParentFollow(qrCodeEntity),
                     Transform(),
-                    // start with a scale of 0 to scale up once we load in
+                    // Start with a scale of 0 to scale up once we load in.
                     Scale(0.0f),
                     Panel(R.layout.ui_qrcode_scanner),
-                    Menu(qrCodeEnt.getComponent<TrackedQrCode>().getPayloadAsString()),
+                    Menu(qrCodeEntity.getComponent<TrackedQrCode>().getPayloadAsString()),
                 )
-            qrCodeToEntity[qrCodeEnt] = menu
+            qrCodeToEntity[qrCodeEntity] = menu
           }
         }
   }

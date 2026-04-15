@@ -41,7 +41,10 @@ android {
     resources.excludes.add("LICENSE.MIT")
   }
 
-  lint { abortOnError = false }
+  lint {
+    abortOnError = false
+    checkReleaseBuilds = false
+  }
 
   buildTypes {
     release {
@@ -99,6 +102,9 @@ dependencies {
   implementation(files("libs/ybvr-exoplayer-extension-cronet.aar"))
   implementation(files("libs/ybvr-exoplayer-extension-rtmp.aar"))
   implementation(files("libs/ybvr-exoplayer-ybvr-libraries.aar"))
+
+  // Extensions
+  implementation("com.meta.horizon.media:videoextensions:0.2.2")
 
   // Tween Engine
   implementation("com.dorkbox:TweenEngine:9.2")

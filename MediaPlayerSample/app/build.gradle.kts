@@ -41,7 +41,10 @@ android {
     resources.excludes.add("LICENSE.MIT")
   }
 
-  lint { abortOnError = false }
+  lint {
+    abortOnError = false
+    checkReleaseBuilds = false
+  }
 
   buildTypes {
     release {
